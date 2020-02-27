@@ -1,0 +1,30 @@
+package main
+
+import (
+	"<%= module_name %>/internal/platform/web"
+	"log"
+	"os"
+)
+
+func main() {
+
+	if err := run(); err != nil {
+		log.Printf("error: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	var routeService *web.RouteService
+	var err error
+
+	if routeService, err = web.NewRouteService(); err != nil {
+		return err
+	}
+
+	if err = routeService.StartService(); err != nil {
+		return err
+	}
+
+	return nil
+}

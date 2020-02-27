@@ -1,0 +1,59 @@
+package health
+
+import (
+	"<%= module_name %>/internal/platform/database"
+	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+)
+
+type HealthController interface {
+	GetHealth(context *gin.Context)
+	RegisterRoutes(router *gin.Engine, serverContextPath string)
+}
+
+type HealthStatus struct {
+	Status string `json:"status"`
+}
+
+func NewHealthStatus(status string) *HealthStatus {
+	return &HealthStatus{Status: status}
+}
+
+type HealthCheckControllerImpl struct {
+	db database.DB
+}
+
+func NewHealthCheckControllerImpl(db database.DB) *HealthCheckControllerImpl {
+	return &HealthCheckControllerImpl{db: db}
+}
+
+const (
+	healthResource        = "health"
+	errDatabaseNotHealthy = "database is not healthy"
+	systemHealthy         = "system is healthy"
+)
+
+func (controller *HealthCheckControllerImpl) GetHealth(context *gin.Context) {
+
+	if err := controller.db.CheckConn(); err != nil {
+		log.Printf("%v %v\n", errDatabaseNotHealthy, err)
+		controller.responseWithStatusAndBody(context, http.StatusOK, NewHealthStatus(errDatabaseNotHealthy))
+		return
+	} else {
+		controller.responseWithStatusAndBody(context, http.StatusOK, NewHealthStatus(systemHealthy))
+		return
+	}
+}
+
+func (controller *HealthCheckControllerImpl) responseWithStatusAndBody(context *gin.Context, httpStatus int, body interface{}) {
+	context.JSON(httpStatus, gin.H{"response": body})
+}
+
+func (controller *HealthCheckControllerImpl) RegisterRoutes(router *gin.Engine, serverContextPath string) {
+
+	api := router.Group(serverContextPath + healthResource)
+	{
+		api.GET("/", controller.GetHealth)
+	}
+}

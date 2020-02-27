@@ -1,0 +1,103 @@
+package web
+
+<% if (includePostgres) { %>
+import (
+	"fmt"
+	"<%= module_name %>/internal/health"
+	"<%= module_name %>/internal/platform/database"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+<% } %>
+
+<% if (!includePostgres) { %>
+import (
+	"fmt"
+	"<%= module_name %>/internal/health"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+<% } %>
+
+type Service interface {
+	StartService() error
+}
+
+type RouteService struct {
+	healthController health.HealthController
+}
+
+const (
+	defaultContextPath = "/"
+	defaultServerPort  = "8000"
+)
+
+func NewRouteService() (*RouteService, error) {
+
+	var err error
+	var healthController health.HealthController
+	<% if (includePostgres) { %>
+	var db database.DB
+
+	if db, err = initDb(); err != nil {
+		return nil, err
+	}
+	healthController = health.NewHealthCheckControllerImpl(db)
+	<% } %>
+
+	<% if (!includePostgres) { %>
+		healthController = health.NewHealthCheckControllerImpl()
+	<% } %>
+
+	return &RouteService{
+		healthController: healthController,
+	}, nil
+}
+
+func (routeService *RouteService) StartService() error {
+	router := gin.Default()
+	serverContextPath := defaultContextPath
+	serverPort := ":" + defaultServerPort
+	if (serverContextPath[len(serverContextPath)-1:]) != "/" {
+		serverContextPath = serverContextPath + "/"
+	}
+	fmt.Printf("Server Context Path: %v", serverContextPath)
+	routeService.healthController.RegisterRoutes(router, serverContextPath)
+	router.NoRoute(func(context *gin.Context) {
+		context.AbortWithStatus(http.StatusNotFound)
+	})
+
+	if err := router.Run(serverPort); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+<% if (includePostgres) { %>
+func initDb() (database.DB, error) {
+
+	dbType := database.Postgres
+
+	username := "<%= database_info.username %>"
+	password := "<%= database_info.password %>"
+	host := "<%= database_info.host %>"
+	port := <%= database_info.port %>
+	name := "<%= database_info.name %>"
+	sslMode := "disable"
+	timezone := "utc"
+
+	config := database.Config{
+		Type:     dbType,
+		User:     username,
+		Password: password,
+		Host:     host,
+		Port:     port,
+		DBName:   name,
+		SSLMode:  sslMode,
+		TimeZone: timezone,
+	}
+
+	return database.NewDB(config)
+}
+<% } %>
