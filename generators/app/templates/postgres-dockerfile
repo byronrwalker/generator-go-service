@@ -1,0 +1,7 @@
+# Use postgres as the base image
+FROM postgres:12.0
+
+# Copy init-db.sh script to the drop in postgres initialization directory.
+# This will result is a log showing database system was shut down followed by database system is ready to accept connections
+# These logs appear because the service restarts in order to include this init-db script, but rest assured the service is behaving normally
+COPY ./init-db.sh /docker-entrypoint-initdb.d/

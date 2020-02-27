@@ -1,0 +1,50 @@
+package health
+
+import (
+	"<%= module_name %>/internal/platform/database"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+type HealthController interface {
+	GetHealth(context *gin.Context)
+	RegisterRoutes(router *gin.Engine, serverContextPath string)
+}
+
+type HealthStatus struct {
+	Status string `json:"status"`
+}
+
+func NewHealthStatus(status string) *HealthStatus {
+	return &HealthStatus{Status: status}
+}
+
+type HealthCheckControllerImpl struct {
+
+}
+
+func NewHealthCheckControllerImpl() *HealthCheckControllerImpl {
+	return &HealthCheckControllerImpl{}
+}
+
+const (
+	healthResource        = "health"
+	systemHealthy         = "system is healthy"
+)
+
+func (controller *HealthCheckControllerImpl) GetHealth(context *gin.Context) {
+		controller.responseWithStatusAndBody(context, http.StatusOK, NewHealthStatus(systemHealthy))
+		return
+}
+
+func (controller *HealthCheckControllerImpl) responseWithStatusAndBody(context *gin.Context, httpStatus int, body interface{}) {
+	context.JSON(httpStatus, gin.H{"response": body})
+}
+
+func (controller *HealthCheckControllerImpl) RegisterRoutes(router *gin.Engine, serverContextPath string) {
+
+	api := router.Group(serverContextPath + healthResource)
+	{
+		api.GET("/", controller.GetHealth)
+	}
+}

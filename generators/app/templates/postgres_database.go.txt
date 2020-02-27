@@ -1,0 +1,142 @@
+package database
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"log"
+)
+
+const (
+	defaultSslMode  = "disable"
+	defaultTimeZone = "utc"
+	connTestQuery = "SELECT true"
+	errEmptyUsername = "user cannot be empty"
+	errEmptyPassword = "password cannot be empty"
+	errEmptyHost = "host cannot be empty"
+	errEmptyPort = "port cannot be 0"
+	errEmptyDatabaseName = "dbname cannot be empty"
+	errDatabaseCallFailedWithError = "database call failed with error: %w"
+)
+
+// Postgres implementation of the DB interface.
+// Embed the sqlx.DB type to encapsulate the db driver used, doing
+// this allows the ability to easily change db drivers or use different drivers
+// in different implementations of the DB interface.
+//
+// For example:
+//   A Postgres DB implementation can use the sqlx db driver
+//   while a MySQL DB implementation can use the built db driver
+type PostgresDB struct {
+	driver *sqlx.DB
+}
+
+// Creates a pointer to a new PostgresDB and opens a database connection
+// using the supplied configurations
+func NewPostgresDB(config Config) (*PostgresDB, error) {
+
+	db := &PostgresDB{}
+
+	return db, db.Open(config)
+}
+
+// Opens a database connection using the supplied configurations
+func (db *PostgresDB) Open(config Config) error {
+
+	_config := &config
+
+	if err := validatePostgresConfig(_config); err != nil {
+		return err
+	}
+
+	var err error
+
+	if db.driver, err = sqlx.Open("postgres", getPostgresConnectionString(_config)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+//Use real query instead of ping method to ensure no false positives
+func (db *PostgresDB) CheckConn() error {
+
+	var result bool
+
+	err := db.Get(&result, connTestQuery)
+
+	if err != nil {
+		err = fmt.Errorf(errDatabaseCallFailedWithError, err)
+		log.Println(err)
+	}
+
+	return err
+}
+
+//region Wrappers
+func (db *PostgresDB) Get(dest interface{}, query string, args ...interface{}) error {
+	return db.driver.Get(dest, query, args...)
+}
+
+// Wrapper around driver Select method
+func (db *PostgresDB) Select(dest interface{}, query string, args ...interface{}) error {
+	return db.driver.Select(dest, query, args...)
+}
+
+// Wrapper around driver NamedExec method
+func (db *PostgresDB) NamedExec(query string, arg interface{}) (sql.Result, error) {
+	return db.driver.NamedExec(query, arg)
+}
+
+// Wrapper around driver Query method
+func (db *PostgresDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return db.driver.Query(query, args...)
+}
+//endregion
+
+
+
+func validatePostgresConfig(config *Config) error {
+
+	var err error = nil
+
+	if len(config.User) == 0 {
+		err = errors.New(errEmptyUsername)
+	} else if len(config.Password) == 0 {
+		err = errors.New(errEmptyPassword)
+	} else if len(config.Host) == 0 {
+		err = errors.New(errEmptyHost)
+	} else if config.Port == 0 {
+		err = errors.New(errEmptyPort)
+	} else if len(config.DBName) == 0 {
+		err = errors.New(errEmptyDatabaseName)
+	}
+
+	if err == nil {
+		if config.SSLMode == "" {
+			log.Println("sslmode not given, defaulting to", defaultSslMode)
+			config.SSLMode = defaultSslMode
+		}
+		if config.TimeZone == "" {
+			log.Println("timezone not given, defaulting to", defaultTimeZone)
+			config.TimeZone = defaultTimeZone
+		}
+	}
+	return err
+}
+
+// Build postgres specific connection string from supplied configuration
+func getPostgresConnectionString(config *Config) string {
+
+	return fmt.Sprintf("host=%v port=%v dbname=%v user=%v password=%v sslmode=%v timezone=%v",
+		config.Host,
+		config.Port,
+		config.DBName,
+		config.User,
+		config.Password,
+		config.SSLMode,
+		config.TimeZone,
+	)
+}

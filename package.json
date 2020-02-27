@@ -1,0 +1,26 @@
+{
+    "name": "generator-go-service-t",
+    "version": "1.0.0",
+    "description": "Yeoman generator for creating new Golang services.",
+    "main": " ",
+    "repository": {
+      "type": "git",
+      "url": "TBD"
+    },
+    "keywords": [
+      "go",
+      "golang",
+      "generator"
+    ],
+    "author": "lug381",
+    "license": "UNLICENSED",
+    "dependencies": {
+      "yeoman-generator": "^1.1.1",
+      "chalk": "^2.3.0",
+      "yosay": "^2.0.0",
+      "simple-git": "^1.92.0",
+      "github": "^9.2.0",
+      "bluebird": "^3.5.0"
+    }
+  }
+  

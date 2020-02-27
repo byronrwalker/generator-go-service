@@ -1,0 +1,37 @@
+
+FROM golang:1.13 as package_api
+
+ENV CGO_ENABLED 0
+ENV APP_DIR /app
+ENV APP_MAIN_DIR ${APP_DIR}/main
+ENV MODULE_HOME /go/src/<%= module_name %>
+ENV MAIN_HOME ${MODULE_HOME}/cmd/api
+ENV MAIN_APP ${MAIN_HOME}/api
+
+# Create a location in the container for the source code. Using the default GOPATH location.
+RUN mkdir -p ${MODULE_HOME}
+
+# Copy the module files first and then download the dependencies
+COPY go.* ${MODULE_HOME}/
+WORKDIR ${MODULE_HOME}
+
+RUN go mod download
+
+# Copy the source code into the container.
+COPY cmd cmd
+COPY internal internal
+
+# Build the api binary
+WORKDIR ${MAIN_HOME}
+RUN go build
+
+# Run the Go Binary in Alpine.
+FROM alpine:3.7
+ARG BUILD_DATE
+ARG VCS_REF
+ARG PACKAGE_NAME
+ARG PACKAGE_PREFIX
+COPY --from=package_api ${MAIN_APP} ${APP_MAIN_DIR}
+WORKDIR ${APP_DIR}
+CMD ${APP_MAIN_DIR}
+ #todo: expand copy from variables

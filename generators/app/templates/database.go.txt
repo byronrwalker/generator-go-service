@@ -1,0 +1,35 @@
+package database
+
+import "database/sql"
+
+type DBType int
+
+const (
+	Postgres DBType = iota
+)
+
+type Config struct {
+	Type     DBType
+	User     string
+	Password string
+	Host     string
+	Port     int
+	DBName   string
+	SSLMode  string
+	TimeZone string
+}
+
+type DB interface {
+	Open(config Config) error
+	CheckConn() error
+	Get(dest interface{}, query string, args ...interface{}) error
+	Select(dest interface{}, query string, args ...interface{}) error
+	NamedExec(query string, arg interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
+func NewDB(config Config) (DB, error) {
+
+	return NewPostgresDB(config)
+
+}

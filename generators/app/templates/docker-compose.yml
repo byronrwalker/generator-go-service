@@ -1,0 +1,37 @@
+
+version: '3.7'
+
+services:
+  <% if (includePostgres) { %>
+  db:
+    build: ./build/database
+    image: <%= artifact_name %>-db:<%= project_organization %>
+    environment:
+      POSTGRES_USER: <%= database_info.username %>
+      POSTGRES_PASSWORD: <%= database_info.password %>
+      POSTGRES_DB: <%= database_info.name %>
+    ports:
+      - "5432:5432"
+    container_name: <%= artifact_name %>-db
+
+  api:
+    build:
+      context: .
+      dockerfile: ./build/api/Dockerfile
+    image: <%= artifact_name %>-api:<%= project_organization %>
+    ports:
+      - "8000:8000"
+    container_name: <%= artifact_name %>-api
+    depends_on:
+      - db
+  <% } %>
+  <% if (!includePostgres) { %>
+  api:
+    build:
+      context: .
+      dockerfile: ./build/api/Dockerfile
+    image: <%= artifact_name %>-api:<%= project_organization %>
+    ports:
+      - "8000:8000"
+    container_name: <%= artifact_name %>-api
+    <% } %>
