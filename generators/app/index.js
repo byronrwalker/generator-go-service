@@ -97,19 +97,19 @@ module.exports = class extends Generator {
                 this.destinationPath(this.project_path + '/build/database/Dockerfile'), params);
 
             this.fs.copyTpl(
-                this.templatePath('database.go'),
+                this.templatePath('database.go.txt'),
                 this.destinationPath(this.project_path + '/internal/platform/database/database.go'), params);
 
             this.fs.copyTpl(
-                this.templatePath('postgres_database.go'),
+                this.templatePath('postgres_database.go.txt'),
                 this.destinationPath(this.project_path + '/internal/platform/database/postgres_database.go'), params);
 
             this.fs.copyTpl(
-                this.templatePath('health_controller_with_db.go'),
+                this.templatePath('health_controller_with_db.go.txt'),
                 this.destinationPath(this.project_path + '/internal/health//health_controller.go'), params);
         } else {
             this.fs.copyTpl(
-                this.templatePath('health_controller.go'),
+                this.templatePath('health_controller.go.txt'),
                 this.destinationPath(this.project_path + '/internal/health//health_controller.go'), params);
         }
 
@@ -118,7 +118,7 @@ module.exports = class extends Generator {
             this.destinationPath(this.project_path + '/internal/platform/web/router.go'), params);
 
         this.fs.copyTpl(
-            this.templatePath('main.go'),
+            this.templatePath('main.go.txt'),
             this.destinationPath(this.project_path + '/cmd/main.go'), params);
 
         this.fs.copyTpl(
