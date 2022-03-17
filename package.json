@@ -18,7 +18,7 @@
     "yeoman-generator": "^1.1.1",
     "chalk": "^2.3.0",
     "yosay": "^2.0.0",
-    "simple-git": "^1.92.0",
+    "simple-git": "^3.3.0",
     "github": "^9.2.0",
     "bluebird": "^3.5.0"
   }
